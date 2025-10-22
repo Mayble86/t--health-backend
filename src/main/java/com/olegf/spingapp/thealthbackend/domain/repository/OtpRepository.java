@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface OtpRepository extends JpaRepository<Otp, Long> {
     Optional<Otp> findByPhone(String phone);
+    boolean existsByPhone(String phone);
 }

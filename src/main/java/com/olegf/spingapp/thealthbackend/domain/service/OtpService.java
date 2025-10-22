@@ -10,78 +10,34 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Random;
+import java.util.UUID;
+
+import static com.olegf.spingapp.thealthbackend.validator.PhoneValidator.validate;
 
 @Service
 @Slf4j
 @AllArgsConstructor
 public class OtpService {
     private final OtpRepository otpRepository;
-    private final RateLimitService rateLimitService;
 
-    private static final int OTP_EXPIRATION_MINUTES = 5;
-    private static final int OTP_REQUEST_INTERVAL_SECONDS = 60;
-    private static final int MAX_ATTEMPTS = 3;
+    public Otp handleOtp(String phone) {
+        try {
+            validate(phone);
+            Otp otp = otpRepository.existsByPhone(phone)
+                    ? otpRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("Entity not found From DB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"))
+                    : new Otp(phone, UUID.randomUUID().toString()); //else
 
-    public String generateOtp(String phone) {
-        String encryptedPhone = Base64.getEncoder().encodeToString(phone.getBytes());
-
-        if (!rateLimitService.allowRequest(phone)) {
-            log.warn("OTP request limit exceeded for {}", phone);
-            throw new IllegalStateException("Слишком много запросов. Попробуйте позже.");
+            log.debug("OTP for {}", otp);
+            return otpRepository.save(otp);
+        } catch (IllegalArgumentException e) {
+            log.error(e.getMessage());
+            throw e;
         }
-
-        otpRepository.findByPhone(encryptedPhone).ifPresent(existing -> {
-            if (existing.getExpiresAt().isAfter(LocalDateTime.now().minusSeconds(OTP_REQUEST_INTERVAL_SECONDS))) {
-                throw new IllegalStateException("код запрашивается cлишком часто");
-            }
-        });
-
-        String code = String.format("%06d", new Random().nextInt(1_000_000));
-        String hashed = BCrypt.hashpw(code, BCrypt.gensalt());
-
-        Otp otp = Otp.builder()
-                .phone(phone)
-                .code(hashed)
-                .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRATION_MINUTES))
-                .used(false)
-                .build();
-
-        otpRepository.save(otp);
-        log.info("OTP generated for {}", phone);
-        return code;
     }
 
-    public boolean verifyOtp(String phone, String code) {
-        String encryptedPhone = Base64.getEncoder().encodeToString(phone.getBytes());
-
-        return otpRepository.findByPhone(encryptedPhone)
-                .filter(o -> !o.isUsed() && o.getExpiresAt().isAfter(LocalDateTime.now()))
-                .map(o -> {
-                    boolean valid = BCrypt.checkpw(code, o.getCode());
-                    if (valid) {
-                        o.setUsed(true);
-                        log.info("OTP validated for {}", phone);
-                    } else {
-                        o.setAttempts(o.getAttempts() + 1);
-                        if (o.getAttempts() >= MAX_ATTEMPTS) {
-                            o.setUsed(true);
-                            log.warn("OTP locked due to max attempts for {}", phone);
-                        }
-                    }
-                    otpRepository.save(o);
-                    return valid;
-                })
-                .orElse(false);
-    }
-
-    @Scheduled(fixedDelay = 60000)
-    public void cleanExpiredOtps() {
-        otpRepository.findAll().forEach(o -> {
-            if (o.isUsed() || o.getExpiresAt().isBefore(LocalDateTime.now())) {
-                otpRepository.delete(o);
-                log.info("Expired OTP deleted for {}", o.getPhone());
-            }
+    public boolean verify(String otpCode, String phone) {
+        return otpRepository.findByPhone(phone).orElse(false).stream().anyMatch(it -> {
+            it == otpCode;
         });
     }
 }

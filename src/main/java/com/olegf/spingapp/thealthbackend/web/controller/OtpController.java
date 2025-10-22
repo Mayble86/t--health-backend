@@ -1,32 +1,28 @@
 package com.olegf.spingapp.thealthbackend.web.controller;
 
+import com.olegf.spingapp.thealthbackend.domain.entity.Otp;
 import com.olegf.spingapp.thealthbackend.domain.service.OtpService;
-import com.olegf.spingapp.thealthbackend.web.dto.OtpRequestDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/otp")
 @RequiredArgsConstructor
 public class OtpController {
     private final OtpService otpService;
 
-    @PostMapping("/send")
-    public ResponseEntity<String> sendOtp(@RequestBody OtpRequestDto otpRequestDto) {
-        String code = otpService.generateOtp(otpRequestDto.getPhone());
-        System.out.println("OTP for " + otpRequestDto.getPhone() + ": " + code);
-        return ResponseEntity.ok("OTP sent");
+    @GetMapping
+    public Otp sendOtp(@RequestParam String phone) {
+        return otpService.handleOtp(phone);
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<String> verifyOtp(@RequestBody OtpRequestDto otpRequestDto) {
-        boolean valid = otpService.verifyOtp(otpRequestDto.getPhone(), otpRequestDto.getCode());
-        if (valid)
-            return ResponseEntity.ok("OTP verified");
-        return ResponseEntity.badRequest().body("Invalid or expired OTP ");
+    @GetMapping("/verify")
+    public Boolean verifyOtp(@RequestParam String otpCode, @RequestParam String phone) {
+        return otpService.verify(otpCode, phone);
     }
 }

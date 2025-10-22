@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
+import java.time.temporal.TemporalAmount;
 
 @Data
 @Entity
@@ -20,22 +20,24 @@ public class Otp {
     private Long id;
     private String phone;
     private String code;
-    private LocalDateTime expiresAt;
-    private boolean used;
+    private LocalDateTime createdAt;
+    private boolean isExpired;
     private int attempts;
 
-    @PrePersist
-    @PreUpdate
-    private void encryptoPhone() {
-        if (phone != null) {
-            phone = Base64.getEncoder().encodeToString(phone.getBytes());
-        }
+    public Otp(String phone, String code) {
+        this.phone = phone;
+        this.code = code;
+        this.createdAt = LocalDateTime.now();
+        this.isExpired = false;
+        this.attempts = 0;
     }
 
-    @PostLoad
-    private void decryptoPhone() {
-        if (phone != null) {
-            phone = new String(Base64.getDecoder().decode(phone));
-        }
+    public void incrementAttempts() {
+        this.attempts++;
+    }
+
+    public boolean checkExpired(TemporalAmount interval) {
+        LocalDateTime now = LocalDateTime.now();
+        return now.isAfter(this.createdAt.plus(interval));
     }
 }
