@@ -1,0 +1,5 @@
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/thealthdb
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=12345
+JWT_SECRET=my_secret_key
+REDIS_HOST=localhost
