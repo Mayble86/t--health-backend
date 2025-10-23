@@ -22,7 +22,7 @@ public class OtpController {
     }
 
     @GetMapping("/verify")
-    public Boolean verifyOtp(@RequestParam String otpCode, @RequestParam String phone) {
-        return otpService.verify(otpCode, phone);
+    public void verifyOtp(@RequestParam String otpCode, @RequestParam String phone) {
+        otpService.verify(otpCode, phone);
     }
 }

@@ -25,3 +25,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+otp:
+  interval: "PT1M"
+  attempts-threshold: 5
