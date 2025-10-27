@@ -4,14 +4,9 @@ import com.olegf.spingapp.thealthbackend.domain.entity.Otp;
 import com.olegf.spingapp.thealthbackend.domain.repository.OtpRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAmount;
-import java.util.Base64;
 import java.util.UUID;
 
 import static com.olegf.spingapp.thealthbackend.validator.PhoneValidator.validate;
@@ -22,6 +17,7 @@ import static com.olegf.spingapp.thealthbackend.validator.PhoneValidator.validat
 public class OtpService {
     private final OtpRepository otpRepository;
     private final OtpProperties otpProperties;
+    private final PhoneService phoneService;
 
     public Otp handleOtp(String phone) {
         validate(phone);
@@ -30,6 +26,8 @@ public class OtpService {
                 : new Otp(phone, UUID.randomUUID().toString()); //else
 
         log.debug("OTP for {}", otp);
+        phoneService.sendOtp(otp);
+
         return otpRepository.save(otp);
     }
 
