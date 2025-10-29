@@ -10,9 +10,6 @@ services:
       POSTGRES_DB: thealthdb
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   redis:
     image: redis:latest
@@ -22,9 +19,3 @@ services:
     environment:
       REDIS_PASSWORD: redis
     command: redis-server
-    volumes:
-      - redis_data:/data
-
-volumes:
-  postgres_data:
-  redis_data:

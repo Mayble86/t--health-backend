@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnTransformer;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAmount;
 
@@ -20,25 +21,33 @@ public class Otp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ColumnTransformer(
-            read = "pgp_sym_decrypt(phone, current_setting('secret'))",
-            write = "pgp_sym_encrypt(?::text, current_setting('secret'))"
+            read = "pgp_sym_decrypt(phone, 'secret')",
+            write = "pgp_sym_encrypt(?::text, 'secret')"
     )
-    private String phone;
+    private byte[] phone;
     @ColumnTransformer(
-            read = "pgp_sym_decrypt(code, current_setting('secret'))",
-            write = "pgp_sym_encrypt(?::text, current_setting('secret'))"
+            read = "pgp_sym_decrypt(code, 'secret')",
+            write = "pgp_sym_encrypt(?::text, 'secret')"
     )
-    private String code;
+    private byte[] code;
     private LocalDateTime createdAt;
     private boolean isExpired;
     private int attempts;
 
     public Otp(String phone, String code) {
-        this.phone = phone;
-        this.code = code;
+        this.phone = phone.getBytes();
+        this.code = code.getBytes();
         this.createdAt = LocalDateTime.now();
         this.isExpired = false;
         this.attempts = 0;
+    }
+
+    public String getPhone() {
+        return new String(phone, StandardCharsets.UTF_8);
+    }
+
+    public String getCode() {
+        return new String(code, StandardCharsets.UTF_8);
     }
 
     public void incrementAttempts() {
